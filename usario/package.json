@@ -1,0 +1,27 @@
+{
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "eslint": "^8.33.0",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^6.9.0",
+    "prettier": "^2.8.3",
+    "sha256": "^0.2.0"
+  },
+  "devDependencies": {
+    "stylelint": "^14.16.1",
+    "stylelint-config-recommended": "^9.0.0"
+  },
+  "scripts": {
+    "lint:check": "eslint . --ignore-path .gitignore",
+    "lint:fix": "eslint . --fix --ignore-path .gitignore",
+    "format:check": "prettier --check . --ignore-path .gitignore",
+    "format": "prettier --write . --ignore-path .gitignore",
+    "stylelint:check": "stylelint \"/*.css\" --ignore-path .gitignore",
+    "stylelint:fix": "stylelint \"/*.css\" --fix --ignore-path .gitignore",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "dev": "npx nodemon app.js"
+  }
+}

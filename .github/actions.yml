@@ -1,0 +1,50 @@
+name: CI/CD pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: 14
+
+    - name: Install dependencies
+      run: |
+        cd usario
+        npm ci
+        cd ../cita
+        npm ci
+        cd ../prescripcion
+        npm ci
+
+    - name: Build services
+      run: |
+        cd usario
+        npm run lint:check
+        npm run build
+        cd ../cita
+        npm run build
+        cd ../prescripcion
+        npm run build
+
+    - name: Run tests
+      run: |
+        cd service-1
+        npm test
+        cd ../service-2
+        npm test
+        cd ../service-3
+        npm test
