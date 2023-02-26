@@ -1,6 +1,6 @@
 #!/bin/sh
 # Run linting on each microservice
-cd client && npm run lint:check && cd ..
-cd usario && npm run lint:check && cd ..
-cd prescripcion && npm run lint:check && cd ..
-cd cita && npm run lint:check && cd ..
+cd client && npm run lint:fix && cd ..
+cd usario && npm run lint:fix && cd ..
+cd prescripcion && npm run lint:fix && cd ..
+cd cita && npm run lint:fix && cd ..
