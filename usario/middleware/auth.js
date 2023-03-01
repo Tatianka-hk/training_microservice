@@ -10,26 +10,19 @@ function change_password(user_password) {
 
 const validateToken = (req, res, next) => {
     const accessToken = req.header('accessToken');
-    console.log(req.params.id);
-    console.log(accessToken);
-
-    if (!accessToken) return res.status(404).send({ mes: 'no' });
-    console.log('validate');
-
+    if (!accessToken || accessToken == undefined) {
+        return res.status(200).send({ mes: 'no' });
+    }
     try {
         const validToken = verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
         req.user = validToken;
-        console.log('validate');
         if (validToken) {
-            console.log('USER TOKEN');
             return next();
         } else {
-            console.log('NONONONON TOKEN');
-            return res.res.status(404).send({ mes: 'no' });
+            return res.status(200).send({ mes: 'no' });
         }
     } catch (err) {
-        console.log(err);
-    // return res.send({ error: err });
+        return res.status(200).send({ mes: 'no' });
     }
 };
 

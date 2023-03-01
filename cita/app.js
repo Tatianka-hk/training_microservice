@@ -11,15 +11,15 @@ app.use(express.json());
 app.use(Router);
 
 app.listen(PORT, (error) => {
-    error ? console.log(error) : console.log(`listening port ${PORT}`);
+  error ? console.log(error) : console.log(`listening port ${PORT}`);
 });
 
 const bd = process.env.mongo;
 mongoose
-    .connect(bd, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then((res) => console.log('Connection to DB'))
-    .catch((error) => console.log(error)); //"no connection to DB"
+  .connect(bd, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then((res) => console.log('Connection to DB'))
+  .catch((error) => console.log(error)); //"no connection to DB"
 
 app.get('/', (req, res, next) => {
-    res.send('Todo es bueno');
+  res.send('Todo es bueno');
 });

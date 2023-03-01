@@ -1,15 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const User = require('./models/user');
-var sha256 = require('sha256');
 const jwt = require('jsonwebtoken');
 const { validateToken, change_password } = require('./middleware/auth');
 
-router.post('/register', (req, res, next) => {
+router.post('/register', (req, res) => {
     try {
-        console.log('register');
         let pas = change_password(req.body.password);
-
         let user = new User({
             name: req.body.name,
             lastName: req.body.last_name,
@@ -25,7 +22,6 @@ router.post('/register', (req, res, next) => {
 
             password: pas,
         });
-        console.log(user);
         user.save();
         let usario = {
             id: req.body._id,
@@ -42,26 +38,20 @@ router.post('/register', (req, res, next) => {
         console.log(err);
     }
 });
-router.post('/login', (req, res, next) => {
+router.post('/login', (req, res) => {
     try {
-        console.log('login');
-        console.log(req.body.name);
-        console.log(req.body.last_name);
-        console.log(req.body.password);
         let pas = change_password(req.body.password);
-
         User.findOne({
             name: req.body.name,
             lastName: req.body.last_name,
             password: pas,
         })
             .then((data) => {
-                console.log(data);
                 if (data == null) {
-                    res.status(404).send('no compare');
+                    res.status(200).send('no compare');
                 } else {
                     let usario = {
-                        id: req.body._id,
+                        id: data._id,
                         name: req.body.name,
                         lastName: req.body.last_name,
                         role: data.role,
@@ -80,49 +70,55 @@ router.post('/login', (req, res, next) => {
         console.log(err);
     }
 });
+router.get('/validate_user', validateToken, (req, res) => {
+    try {
+        res.status(200).send({ role: req.user.role });
+    } catch (err) {
+        console.log(err);
+    }
+});
 
 router.get('/personal_page', validateToken, (req, res) => {
     try {
-        console.log('login');
-        console.log(req.user.name);
-        console.log(req.user.lastName);
-        console.log(req.user.role);
-        User.findOne({
-            name: req.user.name,
-            lastName: req.user.lastName,
-            role: req.user.role,
-            // doctor: req.user.doctor,
-        })
-            .then((data) => {
-                console.log(data.patient.doctor);
-                let user = {
-                    name: req.user.name,
-                    lastName: req.user.lastName,
-                    role: req.user.role,
-                    doctor: req.user.doctor,
-                    email: data.email,
-                    phone: data.phoneNumber,
-                    address: data.address,
-                    id: data._id,
-                };
-                User.findById(data.patient.doctor).then((udoctor) => {
-                    console.log(udoctor);
-                    if (udoctor != null) {
-                        let doctor = {
-                            id: udoctor._id,
-                            name: udoctor.name,
-                            lastName: udoctor.lastName,
-                            email: udoctor.email,
-                            phone: udoctor.phoneNumber,
-                            schedule: udoctor.doctor.schedule,
-                        };
-                        res.status(200).send({ user: user, doctor: doctor });
-                    }
-                });
+        if (req.user.role != 'patient') {
+            res.status(404).send({ role: req.user.role });
+        } else {
+            User.findOne({
+                name: req.user.name,
+                lastName: req.user.lastName,
+                role: req.user.role,
             })
-            .catch((err) => {
-                console.log(err);
-            });
+                .then((data) => {
+                    let user = {
+                        name: req.user.name,
+                        lastName: req.user.lastName,
+                        role: req.user.role,
+                        doctor: req.user.doctor,
+                        email: data.email,
+                        phone: data.phoneNumber,
+                        address: data.address,
+                        id: data._id,
+                    };
+                    User.findById(data.patient.doctor).then((udoctor) => {
+                        if (udoctor != null) {
+                            let doctor = {
+                                id: udoctor._id,
+                                name: udoctor.name,
+                                lastName: udoctor.lastName,
+                                email: udoctor.email,
+                                phone: udoctor.phoneNumber,
+                                schedule: udoctor.doctor.schedule,
+                            };
+                            res
+                                .status(200)
+                                .send({ user: user, doctor: doctor, role: req.user.role });
+                        }
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
+        }
     } catch (err) {
         console.log(err);
     }
@@ -130,7 +126,6 @@ router.get('/personal_page', validateToken, (req, res) => {
 
 router.post('/change', validateToken, (req, res) => {
     try {
-        console.log(req.body.att);
         if (req.body.att == 'lastName') {
             User.findOneAndUpdate(
                 {
@@ -208,7 +203,6 @@ router.post('/change', validateToken, (req, res) => {
 
 router.delete('/delete', validateToken, (req, res) => {
     try {
-        console.log('deleted');
         User.findOneAndDelete({
             name: req.user.name,
             lastName: req.user.lastName,
@@ -244,8 +238,6 @@ router.post('/add_admin', (req, res, next) => {
 router.post('/add_doctor', (req, res, next) => {
     try {
         let pas = change_password(req.body.password);
-        console.log('add_doctor');
-        console.log(req.body.schedule);
         let user = new User({
             name: req.body.name,
             lastName: req.body.lastName,
@@ -266,50 +258,65 @@ router.post('/add_doctor', (req, res, next) => {
 });
 
 router.get('/doctors', validateToken, (req, res, next) => {
-    console.log('doctors');
     try {
-        User.find({ role: 'doctor' })
-            .then((data) => {
-                console.log(data);
-                res.status(200).send(data);
-            })
-            .catch((err) => console.log(err));
+        if (req.user.role != 'admin') {
+            res.status(200).send({ role: req.user.role });
+        } else {
+            User.find({ role: 'doctor' })
+                .then((data) => {
+                    res.status(200).send({ user: data, role: req.user.role });
+                })
+                .catch((err) => console.log(err));
+        }
     } catch (err) {
         console.log(err);
     }
 });
 
 router.get('/doctors_list', (req, res, next) => {
-    console.log('doctors');
     try {
         User.find({ role: 'doctor' })
             .then((data) => {
-                console.log(data);
                 res.status(200).send(data);
             })
             .catch((err) => console.log(err));
+    } catch (err) {
+        console.log(err);
+    }
+});
+router.get('/doctors_list2', validateToken, (req, res) => {
+    try {
+        if (req.user.role != 'patient') {
+            res.status(200).send({ role: req.user.role });
+        } else {
+            User.find({ role: 'doctor' })
+                .then((data) => {
+                    res.status(200).send(data);
+                })
+                .catch((err) => console.log(err));
+        }
     } catch (err) {
         console.log(err);
     }
 });
 
 router.get('/doctor', validateToken, (req, res) => {
-    console.log('doctor');
     try {
-        User.findById(req.query.id)
-            .then((data) => {
-                console.log(data);
-                res.status(200).send(data);
-            })
-            .catch((err) => console.log(err));
+        if (req.user.role != 'admin') {
+            res.status(200).send({ role: req.user.role });
+        } else {
+            User.findById(req.query.id)
+                .then((data) => {
+                    res.status(200).send({ user: data, role: req.user.role });
+                })
+                .catch((err) => console.log(err));
+        }
     } catch (err) {
         console.log(err);
     }
 });
 
 router.get('/acc_doctor', (req, res) => {
-    console.log('doctor');
-    console.log(req.query.id);
     try {
         User.findById(req.query.id)
             .then((data) => {
@@ -323,7 +330,6 @@ router.get('/acc_doctor', (req, res) => {
 });
 
 router.post('/edit_doctor', validateToken, (req, res) => {
-    console.log('edit doctor');
     try {
         User.findByIdAndUpdate(req.body.id, {
             name: req.body.name,
@@ -336,7 +342,6 @@ router.post('/edit_doctor', validateToken, (req, res) => {
             },
         })
             .then((data) => {
-                console.log(data);
                 res.status(200).send(data);
             })
             .catch((err) => console.log(err));
@@ -346,17 +351,15 @@ router.post('/edit_doctor', validateToken, (req, res) => {
 });
 
 router.put('/change_doctor', validateToken, (req, res) => {
-    console.log('chansge doctor');
     try {
         User.findByIdAndUpdate(req.body.id, {
             patient: {
                 doctor: req.body.doctor,
                 doctor_name: req.body.doctor_name,
                 doctor_last_name: req.body.doctor_last_name,
-            }
+            },
         })
             .then((data) => {
-                console.log(data);
                 res.status(200).send(data);
             })
             .catch((err) => console.log(err));
@@ -366,9 +369,6 @@ router.put('/change_doctor', validateToken, (req, res) => {
 });
 
 router.delete('/delete_doctor', (req, res) => {
-    console.log('delete doctor');
-    console.log(req.body.id);
-
     try {
         User.findByIdAndDelete(req.body.id)
             .then((data) => {
@@ -381,26 +381,29 @@ router.delete('/delete_doctor', (req, res) => {
 });
 
 router.get('/get_users', validateToken, (req, res, next) => {
-    console.log('get users');
     try {
-        User.find({ role: 'patient' })
-            .then((data) => {
-                console.log(data);
-                res.status(200).send(data);
-            })
-            .catch((err) => console.log(err));
+        if (req.user.role != 'admin') {
+            res.status(200).send({ role: req.user.role });
+        } else {
+            User.find({ role: 'patient' })
+                .then((data) => {
+                    res.status(200).send({ user: data, role: req.user.role });
+                })
+                .catch((err) => console.log(err));
+        }
     } catch (err) {
         console.log(err);
     }
 });
 
 router.get('/get_doctor_pacientos', validateToken, (req, res, next) => {
-    console.log('get users');
     try {
-        User.find({ role: 'patient', 'patient.doctor ': req.user.id })
+        if (req.user.role != 'doctor') {
+            res.status(200).send({ role: req.user.role });
+        }
+        User.find({ role: 'patient', 'patient.doctor': req.user.id })
             .then((data) => {
-                console.log(data);
-                res.status(200).send(data);
+                res.status(200).send({ user: data, role: req.user.role });
             })
             .catch((err) => console.log(err));
     } catch (err) {
@@ -409,15 +412,12 @@ router.get('/get_doctor_pacientos', validateToken, (req, res, next) => {
 });
 
 router.get('/get_user', validateToken, (req, res, next) => {
-    console.log('get user');
     try {
-        console.log('login');
-        console.log(req.user.name);
-        console.log(req.user.lastName);
-        console.log(req.user.role);
+        if (req.user.role != 'admin') {
+            res.status(200).send({ role: req.user.role });
+        }
         User.findById(req.query.id)
             .then((data) => {
-                console.log(data.patient.doctor);
                 let user = {
                     name: data.name,
                     lastName: data.lastName,
@@ -428,7 +428,9 @@ router.get('/get_user', validateToken, (req, res, next) => {
                     address: data.address,
                 };
                 User.find({ role: 'doctor' }).then((udoctor) => {
-                    res.status(200).send({ user: user, doctor: udoctor });
+                    res
+                        .status(200)
+                        .send({ user: user, doctor: udoctor, role: req.user.role });
                 });
             })
             .catch((err) => {
@@ -440,7 +442,6 @@ router.get('/get_user', validateToken, (req, res, next) => {
 });
 
 router.post('/edit_user', validateToken, (req, res) => {
-    console.log('edit user');
     try {
         User.findByIdAndUpdate(req.body.id, {
             name: req.body.name,
@@ -455,7 +456,6 @@ router.post('/edit_user', validateToken, (req, res) => {
             },
         })
             .then((data) => {
-                console.log(data);
                 res.status(200).send(data);
             })
             .catch((err) => console.log(err));
@@ -466,38 +466,30 @@ router.post('/edit_user', validateToken, (req, res) => {
 module.exports = router;
 
 router.get('/personal_admin', validateToken, (req, res) => {
-    console.log('personal_admin user');
     try {
-        User.findOne({
-            name: req.user.name,
-            lastName: req.user.lastName,
-            role: req.user.role,
-            // doctor: req.user.doctor,
-        })
-            .then((data) => {
-                console.log(data.patient.doctor);
-                let user = {
-                    name: req.user.name,
-                    lastName: req.user.lastName,
-                    role: req.user.role,
-                    doctor: req.user.doctor,
-                    email: data.email,
-                    phone: data.phoneNumber,
-                    address: data.address,
-                };
-                res.status(200).send({
-                    name: req.user.name,
-                    lastName: req.user.lastName,
-                    role: req.user.role,
-                    doctor: req.user.doctor,
-                    email: data.email,
-                    phone: data.phoneNumber,
-                    address: data.address,
-                });
+        if (req.user.role != 'admin') {
+            res.status(200).send({ role: req.user.role });
+        } else {
+            User.findOne({
+                name: req.user.name,
+                lastName: req.user.lastName,
+                role: req.user.role,
             })
-            .catch((err) => {
-                console.log(err);
-            });
+                .then((data) => {
+                    res.status(200).send({
+                        name: req.user.name,
+                        lastName: req.user.lastName,
+                        role: req.user.role,
+                        doctor: req.user.doctor,
+                        email: data.email,
+                        phone: data.phoneNumber,
+                        address: data.address,
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
+        }
     } catch (err) {
         console.log(err);
     }
@@ -505,8 +497,12 @@ router.get('/personal_admin', validateToken, (req, res) => {
 module.exports = router;
 
 router.get('/personal_doctor', validateToken, (req, res) => {
-    console.log('personal_admin user');
     try {
+        if (req.user.role != 'doctor') {
+            res.status(200).send({
+                role: req.user.role,
+            });
+        }
         User.findOne({
             name: req.user.name,
             lastName: req.user.lastName,
@@ -514,7 +510,6 @@ router.get('/personal_doctor', validateToken, (req, res) => {
             // doctor: req.user.doctor,
         })
             .then((data) => {
-                console.log(data);
                 res.status(200).send({
                     name: req.user.name,
                     lastName: req.user.lastName,

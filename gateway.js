@@ -17,11 +17,8 @@ const orderService = "http://localhost:8003";
 // Forward requests to respective service based on URL path
 app.all("/:service/:endpoint", (req, res) => {
 
-  console.log(req.params.service)
-
   switch (req.params.service) {
     case "user":
-      console.log("her")
       axios({
         method: req.method,
         url: `${userService}/${req.params.endpoint}`,
@@ -30,15 +27,13 @@ app.all("/:service/:endpoint", (req, res) => {
         params:req.query
       })
         .then(response => {
-          console.log(response)
           res.status(response.status).send(response.data);
         })
         .catch(error => {
-          // res.status(error.response.status).send(error.response.data);
+          res.status(error.response.status).send(error.response.data);
         });
       break;
     case "cita":
-      console.log("aqui")
       axios({
         method: req.method,
         url: `${itemService}/${req.params.endpoint}`,
@@ -47,17 +42,13 @@ app.all("/:service/:endpoint", (req, res) => {
         params:req.query
       })
         .then(response => {
-         
-          console.log("response")
           res.status(response.status).send(response.data);
         })
         .catch(error => {
-          console.log("error")
-          // res.status(error.response.status).send(error.response.data);s
+          res.status(error.response.status).send(error.response.data);
         });
       break;
     case "prescription":
-      console.log("aqui")
       axios({
         method: req.method,
         url: `${orderService}/${req.params.endpoint}`,

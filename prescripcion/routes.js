@@ -5,7 +5,6 @@ const Prescription = require("./models/prescription")
 
 router.post('/make_prescription', (req, res, next) => {
     try {
-        console.log('register');
         let prescription = new Prescription({
             cita_id: req.body.cita_id,
             user_id: req.body.user_id,
@@ -18,7 +17,6 @@ router.post('/make_prescription', (req, res, next) => {
             notes: req.body.notes,
 
         });
-        console.log(prescription);
         prescription.save();
         res.status(201).send();
     } catch (err) {
@@ -28,7 +26,6 @@ router.post('/make_prescription', (req, res, next) => {
 
 router.put('/edit_prescription', (req, res, next) => {
     try {
-        console.log('register');
         Prescription
             .findOneAndUpdate({cita_id: req.body.cita_id}, { notes: req.body.notes})
             .then(()=>{ res.status(201).send();})
@@ -41,26 +38,10 @@ router.put('/edit_prescription', (req, res, next) => {
 
 router.get('/get_prescription_by_cita_id', (req, res, next) => {
     try {
-        console.log('register ', req.query.cita_id);
-        Prescription
-        .find()
-        .then((data)=>{ 
-            
-            console.log(data)
-        })
-        .catch((err)=>{console.log(err)})
         Prescription
             .findOne({cita_id: req.query.cita_id})
             .then((data)=>{ 
-                
-                console.log(data)
-                // if (data!= null){
-                    console.log(data["notes"])  
-                    console.log(data.notes)  
-                    console.log(data.user_name)
-                    res.status(201).send(data.notes); 
-               
-                // }
+                res.status(201).send(data.notes); 
             })
             .catch((err)=>{console.log(err)})
        
@@ -71,26 +52,10 @@ router.get('/get_prescription_by_cita_id', (req, res, next) => {
 
 router.get('/get_prescription_by_cita_id_l', (req, res, next) => {
     try {
-        console.log('register ', req.query.cita_id);
-        Prescription
-        .find()
-        .then((data)=>{ 
-            
-            console.log(data)
-        })
-        .catch((err)=>{console.log(err)})
         Prescription
             .findOne({cita_id: req.query.cita_id})
             .then((data)=>{ 
-                
-                console.log(data)
-                // if (data!= null){
-                    console.log(data["notes"])  
-                    console.log(data.notes)  
-                    console.log(data.user_name)
-                    res.status(201).send(data); 
-               
-                // }
+                res.status(201).send(data); 
             })
             .catch((err)=>{console.log(err)})
        
